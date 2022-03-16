@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
-
 import os
 import sys
 import time
@@ -10,51 +8,54 @@ import time
 # sys.path.append("./generated")
 import os.path
 
-import geoserver
-from geoserver.rest import ApiException
+from api.GeoserverApi import GeoserverAPI
 
 from pprint import pprint
 import string
 import random
 
 # A bit of dirty globals
-GEOSERVER_URL = (
-    os.getenv("GEOSERVER_URL", "http://localhost:8085/geoserver-cloud").strip("/")
-    + "/rest"
-)
+# GEOSERVER configuration
+GEOSERVER_URL = os.getenv(
+    "GEOSERVER_URL", "http://localhost:8085/geoserver-cloud"
+).strip("/")
+GEOSERVER_REST_URL = os.getenv("GEOSERVER_REST_URL", GEOSERVER_URL + "/rest").strip("/")
 GEOSERVER_USERNAME = os.getenv("GEOSERVER_USERNAME", "admin")
 GEOSERVER_PASSWORD = os.getenv("GEOSERVER_PASSWORD", "geoserver")
 
-
-configuration = geoserver.Configuration()
-configuration.host = GEOSERVER_URL
-configuration.username = GEOSERVER_USERNAME
-configuration.password = GEOSERVER_PASSWORD
-
-
-# create a new workspace
-worskpace_name = "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
+# POSTGIS database
+PGUSER = os.getenv("PGUSER", "username")
+PGPASSWORD = os.getenv("PGPASSWORD", "password")
+PGHOST = os.getenv("PGHOST", "172.17.0.1")
+PGPORT = os.getenv("PGPORT", 5432)
+PGDATABASE = os.getenv("PGDATABASE", "test")
 
 
-api_instance = geoserver.WorkspacesApi(geoserver.ApiClient(configuration))
-body = geoserver.WorkspaceWrapper(
-    geoserver.WorkspaceInfo(worskpace_name)
-)  # WorkspaceWrapper | The Workspace body information to upload.
-default = False  # bool | New workspace will be the used as the default. Allowed values are true or false,  The default value is false. (optional) (default to false)
+def main():
+    finalCleanup = True
+    # create a new workspace
+    worskpace_name = "".join(
+        random.choices(string.ascii_uppercase + string.digits, k=10)
+    )
+    pprint(worskpace_name)
+    geoserverServer = GeoserverAPI(
+        GEOSERVER_REST_URL, GEOSERVER_USERNAME, GEOSERVER_PASSWORD
+    )
+    geoserverServer.create_workspace(worskpace_name)
+    workspaces = geoserverServer.list_workspaces()
+    print(workspaces)
 
-try:
-    # add a new workspace to GeoServer
-    api_instance.create_workspace(body, default=default)
-except ApiException as e:
-    print("Exception when calling WorkspacesApi->create_workspace: %s\n" % e)
+    layer_name = "".join(random.choices(string.ascii_lowercase + string.digits, k=10))
+    # create one db store
+    geoserverServer.create_pg_store(
+        worskpace_name, layer_name, PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD
+    )
+
+    if finalCleanup:
+        # brutal cleanup at the end
+        for workspace in workspaces:
+            geoserverServer.delete_workspace(workspace)
 
 
-# check that it is there
-api_instance = geoserver.WorkspacesApi(geoserver.ApiClient(configuration))
-
-try:
-    # Get a list of workspaces
-    api_response = api_instance.get_workspaces()
-    pprint(api_response)
-except ApiException as e:
-    print("Exception when calling WorkspacesApi->get_workspaces: %s\n" % e)
+if __name__ == "__main__":
+    main()
