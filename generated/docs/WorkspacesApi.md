@@ -1,17 +1,16 @@
 # geoserver.WorkspacesApi
 
-All URIs are relative to _http://localhost:8080/geoserver/rest_
+All URIs are relative to *http://localhost:8080/geoserver/rest*
 
-| Method                                                    | HTTP request                       | Description                      |
-| --------------------------------------------------------- | ---------------------------------- | -------------------------------- |
-| [**create_workspace**](WorkspacesApi.md#create_workspace) | **POST** /workspaces               | add a new workspace to GeoServer |
-| [**delete_workspace**](WorkspacesApi.md#delete_workspace) | **DELETE** /workspaces/{workspace} |
-| [**get_workspace**](WorkspacesApi.md#get_workspace)       | **GET** /workspaces/{workspace}    | Retrieve a Workspace             |
-| [**get_workspaces**](WorkspacesApi.md#get_workspaces)     | **GET** /workspaces                | Get a list of workspaces         |
-| [**modify_workspace**](WorkspacesApi.md#modify_workspace) | **PUT** /workspaces/{workspace}    | Update a workspace               |
+Method | HTTP request | Description
+------------- | ------------- | -------------
+[**create_workspace**](WorkspacesApi.md#create_workspace) | **POST** /workspaces | add a new workspace to GeoServer
+[**delete_workspace**](WorkspacesApi.md#delete_workspace) | **DELETE** /workspaces/{workspace} | 
+[**get_workspace**](WorkspacesApi.md#get_workspace) | **GET** /workspaces/{workspace} | Retrieve a Workspace
+[**get_workspaces**](WorkspacesApi.md#get_workspaces) | **GET** /workspaces | Get a list of workspaces
+[**modify_workspace**](WorkspacesApi.md#modify_workspace) | **PUT** /workspaces/{workspace} | Update a workspace
 
 # **create_workspace**
-
 > create_workspace(body, default=default)
 
 add a new workspace to GeoServer
@@ -19,7 +18,6 @@ add a new workspace to GeoServer
 Adds a new workspace to the server
 
 ### Example
-
 ```python
 from __future__ import print_function
 import time
@@ -34,7 +32,7 @@ configuration.password = 'YOUR_PASSWORD'
 # create an instance of the API class
 api_instance = geoserver.WorkspacesApi(geoserver.ApiClient(configuration))
 body = geoserver.WorkspaceWrapper() # WorkspaceWrapper | The Workspace body information to upload.
-default = False # bool | New workspace will be the used as the default. Allowed values are true or false,  The default value is false. (optional) (default to false)
+default = false # bool | New workspace will be the used as the default. Allowed values are true or false,  The default value is false. (optional) (default to false)
 
 try:
     # add a new workspace to GeoServer
@@ -45,10 +43,10 @@ except ApiException as e:
 
 ### Parameters
 
-| Name        | Type                                        | Description                                                                                                  | Notes                         |
-| ----------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------- |
-| **body**    | [**WorkspaceWrapper**](WorkspaceWrapper.md) | The Workspace body information to upload.                                                                    |
-| **default** | **bool**                                    | New workspace will be the used as the default. Allowed values are true or false, The default value is false. | [optional] [default to false] |
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **body** | [**WorkspaceWrapper**](WorkspaceWrapper.md)| The Workspace body information to upload. | 
+ **default** | **bool**| New workspace will be the used as the default. Allowed values are true or false,  The default value is false. | [optional] [default to false]
 
 ### Return type
 
@@ -60,17 +58,17 @@ void (empty response body)
 
 ### HTTP request headers
 
-- **Content-Type**: application/json
-- **Accept**: Not defined
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **delete_workspace**
-
 > delete_workspace(workspace, recurse=recurse)
 
-### Example
 
+
+### Example
 ```python
 from __future__ import print_function
 import time
@@ -95,10 +93,10 @@ except ApiException as e:
 
 ### Parameters
 
-| Name          | Type     | Description                               | Notes      |
-| ------------- | -------- | ----------------------------------------- | ---------- |
-| **workspace** | **str**  | the name of the workspace to fetch        |
-| **recurse**   | **bool** | delete workspace contents (default false) | [optional] |
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **workspace** | **str**| the name of the workspace to fetch | 
+ **recurse** | **bool**| delete workspace contents (default false) | [optional] 
 
 ### Return type
 
@@ -110,13 +108,12 @@ void (empty response body)
 
 ### HTTP request headers
 
-- **Content-Type**: Not defined
-- **Accept**: Not defined
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_workspace**
-
 > object get_workspace(workspace, quiet_on_not_found=quiet_on_not_found)
 
 Retrieve a Workspace
@@ -124,7 +121,6 @@ Retrieve a Workspace
 Retrieves a single workspace definition.
 
 ### Example
-
 ```python
 from __future__ import print_function
 import time
@@ -139,7 +135,7 @@ configuration.password = 'YOUR_PASSWORD'
 # create an instance of the API class
 api_instance = geoserver.WorkspacesApi(geoserver.ApiClient(configuration))
 workspace = 'workspace_example' # str | the name of the workspace to fetch
-quiet_on_not_found = True # bool |  (optional) (default to true)
+quiet_on_not_found = true # bool |  (optional) (default to true)
 
 try:
     # Retrieve a Workspace
@@ -151,10 +147,10 @@ except ApiException as e:
 
 ### Parameters
 
-| Name                   | Type     | Description                        | Notes                        |
-| ---------------------- | -------- | ---------------------------------- | ---------------------------- |
-| **workspace**          | **str**  | the name of the workspace to fetch |
-| **quiet_on_not_found** | **bool** |                                    | [optional] [default to true] |
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **workspace** | **str**| the name of the workspace to fetch | 
+ **quiet_on_not_found** | **bool**|  | [optional] [default to true]
 
 ### Return type
 
@@ -166,13 +162,12 @@ except ApiException as e:
 
 ### HTTP request headers
 
-- **Content-Type**: Not defined
-- **Accept**: application/json
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_workspaces**
-
 > WorkspacesResponse get_workspaces()
 
 Get a list of workspaces
@@ -180,7 +175,6 @@ Get a list of workspaces
 Displays a list of all workspaces on the server.
 
 ### Example
-
 ```python
 from __future__ import print_function
 import time
@@ -204,7 +198,6 @@ except ApiException as e:
 ```
 
 ### Parameters
-
 This endpoint does not need any parameter.
 
 ### Return type
@@ -217,13 +210,12 @@ This endpoint does not need any parameter.
 
 ### HTTP request headers
 
-- **Content-Type**: Not defined
-- **Accept**: application/json
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **modify_workspace**
-
 > modify_workspace(body, workspace)
 
 Update a workspace
@@ -231,7 +223,6 @@ Update a workspace
 takes the body of the post and modifies the workspace from it.
 
 ### Example
-
 ```python
 from __future__ import print_function
 import time
@@ -257,10 +248,10 @@ except ApiException as e:
 
 ### Parameters
 
-| Name          | Type                                        | Description                               | Notes |
-| ------------- | ------------------------------------------- | ----------------------------------------- | ----- |
-| **body**      | [**WorkspaceWrapper**](WorkspaceWrapper.md) | The Workspace body information to upload. |
-| **workspace** | **str**                                     | the name of the workspace to fetch        |
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **body** | [**WorkspaceWrapper**](WorkspaceWrapper.md)| The Workspace body information to upload. | 
+ **workspace** | **str**| the name of the workspace to fetch | 
 
 ### Return type
 
@@ -272,7 +263,8 @@ void (empty response body)
 
 ### HTTP request headers
 
-- **Content-Type**: application/json
-- **Accept**: Not defined
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+

@@ -7,7 +7,9 @@ import sys
 import time
 
 # FIXME: this is dirty
-sys.path.append("generated")
+# sys.path.append("./generated")
+import os.path
+
 import geoserver
 from geoserver.rest import ApiException
 
@@ -31,10 +33,12 @@ configuration.password = GEOSERVER_PASSWORD
 
 
 # create a new workspace
+worskpace_name = "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
+
 
 api_instance = geoserver.WorkspacesApi(geoserver.ApiClient(configuration))
 body = geoserver.WorkspaceWrapper(
-    geoserver.WorkspaceInfo("test")
+    geoserver.WorkspaceInfo(worskpace_name)
 )  # WorkspaceWrapper | The Workspace body information to upload.
 default = False  # bool | New workspace will be the used as the default. Allowed values are true or false,  The default value is false. (optional) (default to false)
 
@@ -43,22 +47,6 @@ try:
     api_instance.create_workspace(body, default=default)
 except ApiException as e:
     print("Exception when calling WorkspacesApi->create_workspace: %s\n" % e)
-
-
-# create an instance of the API class
-api_instance = geoserver.WorkspacesApi(geoserver.ApiClient(configuration))
-body = (
-    geoserver.WorkspaceWrapper()
-)  # WorkspaceWrapper | The Workspace body information to upload.
-workspace = "".join(
-    random.choices(string.ascii_uppercase + string.digits, k=10)
-)  # str | the name of the workspace to fetch
-
-try:
-    # Update a workspace
-    api_instance.modify_workspace(body, workspace)
-except ApiException as e:
-    print("Exception when calling WorkspacesApi->modify_workspace: %s\n" % e)
 
 
 # check that it is there
