@@ -18,10 +18,6 @@ from random import randint
 from owslib.wms import WebMapService
 from owslib.util import ServiceException
 
-import matplotlib.pyplot as plt
-
-plt.tight_layout()
-
 
 class Point:
     def __init__(self, x, y):
