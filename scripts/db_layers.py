@@ -86,7 +86,7 @@ class StupidPgLayers:
 
 
 def main():
-    finalCleanup = True
+    finalCleanup = False
     # create a new workspace
     worskpace_name = "".join(
         random.choices(string.ascii_uppercase + string.digits, k=10)
@@ -112,6 +112,14 @@ def main():
     layer_name = randomStr()
     pg_layer = StupidPgLayers(engine, layer_name, "POLYGON")
     pg_layer.insert(name=randomStr(), geom="POLYGON((0 0,1 0,1 1,0 1,0 0))")
+
+    geoserverServer.create_pg_layer(
+        worskpace_name,
+        store_name,
+        layer_name,
+        native_name=layer_name,
+        feature_type="Polygon",
+    )
 
     if finalCleanup:
         # brutal cleanup at the end
