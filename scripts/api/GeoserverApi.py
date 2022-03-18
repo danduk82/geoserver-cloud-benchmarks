@@ -1,75 +1,10 @@
 import geoserver
 from geoserver.rest import ApiException
 from geoserver import (
-    DataStoreWrapper,
     DataStoreInfo,
     DataStoreInfoWrapper,
-    ConnectionParameters,
     ConnectionParameterEntry,
 )
-
-from collections.abc import MutableMapping
-
-
-class SimplifiedGeoserverLayer(MutableMapping):
-    def __init__(
-        self, workspace_name, store_name, layer_name, native_name, feature_type="Point"
-    ):
-        self.store = dict()
-        self.update(
-            {
-                "featureType": {
-                    "name": layer_name,
-                    "nativeName": native_name,
-                    "namespace": {"name": workspace_name},
-                    "title": layer_name,
-                    "keywords": {"string": ["features", layer_name]},
-                    "srs": "EPSG:3857",
-                    "projectionPolicy": "FORCE_DECLARED",
-                    "enabled": True,
-                    "store": {
-                        "@class": "dataStore",
-                        "name": f"{workspace_name}:{store_name}",
-                    },
-                    "attributes": {
-                        "attribute": [
-                            {
-                                "name": "name",
-                                "minOccurs": 0,
-                                "maxOccurs": 1,
-                                "nillable": True,
-                                "binding": "java.lang.String",
-                            },
-                            {
-                                "name": "geom",
-                                "minOccurs": 0,
-                                "maxOccurs": 1,
-                                "nillable": True,
-                                "binding": f"org.locationtech.jts.geom.{feature_type}",
-                            },
-                        ]
-                    },
-                }
-            }
-        )  # use the free update to set keys
-
-    def __getitem__(self, key):
-        return self.store[self._keytransform(key)]
-
-    def __setitem__(self, key, value):
-        self.store[self._keytransform(key)] = value
-
-    def __delitem__(self, key):
-        del self.store[self._keytransform(key)]
-
-    def __iter__(self):
-        return iter(self.store)
-
-    def __len__(self):
-        return len(self.store)
-
-    def _keytransform(self, key):
-        return key
 
 
 class GeoserverAPI:
