@@ -3,15 +3,12 @@
 from api.GeoserverApi import GeoserverAPI
 
 import os
-import sys
-import time
 
 # FIXME: this is dirty
 # sys.path.append("./generated")
 import os.path
 
 
-from pprint import pprint
 import string
 import random
 
@@ -39,7 +36,6 @@ import shapely.wkt as wkt
 import geopandas as gpd
 
 import sqlalchemy
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Table, MetaData
 from sqlalchemy.engine import create_engine
 from geoalchemy2 import Geometry
@@ -91,13 +87,11 @@ def main():
     worskpace_name = "".join(
         random.choices(string.ascii_uppercase + string.digits, k=10)
     )
-    pprint(worskpace_name)
     geoserverServer = GeoserverAPI(
         GEOSERVER_REST_URL, GEOSERVER_USERNAME, GEOSERVER_PASSWORD
     )
     geoserverServer.create_workspace(worskpace_name)
     workspaces = geoserverServer.list_workspaces()
-    print(workspaces)
 
     # create one db store
     store_name = randomStr()
@@ -113,6 +107,7 @@ def main():
     pg_layer = StupidPgLayers(engine, layer_name, "POLYGON")
     pg_layer.insert(name=randomStr(), geom="POLYGON((0 0,1 0,1 1,0 1,0 0))")
 
+    # setup the layer in geoserver
     geoserverServer.create_pg_layer(
         worskpace_name,
         store_name,
