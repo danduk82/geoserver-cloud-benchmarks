@@ -1,6 +1,17 @@
 #!/usr/bin/env python
 
 from api.GeoserverApi import GeoserverAPI
+from api import (
+    GEOSERVER_URL,
+    GEOSERVER_REST_URL,
+    GEOSERVER_PASSWORD,
+    GEOSERVER_USERNAME,
+    PGDATABASE,
+    PGHOST,
+    PGPASSWORD,
+    PGPORT,
+    PGUSER,
+)
 
 import os
 import os.path
@@ -18,23 +29,6 @@ import sqlalchemy
 from sqlalchemy import Column, Integer, String, Table, MetaData
 from sqlalchemy.engine import create_engine
 from geoalchemy2 import Geometry
-
-
-# A bit of dirty globals
-# GEOSERVER configuration
-GEOSERVER_URL = os.getenv(
-    "GEOSERVER_URL", "http://localhost:8085/geoserver-cloud"
-).strip("/")
-GEOSERVER_REST_URL = os.getenv("GEOSERVER_REST_URL", GEOSERVER_URL + "/rest").strip("/")
-GEOSERVER_USERNAME = os.getenv("GEOSERVER_USERNAME", "admin")
-GEOSERVER_PASSWORD = os.getenv("GEOSERVER_PASSWORD", "geoserver")
-
-# POSTGIS database
-PGUSER = os.getenv("PGUSER", "username")
-PGPASSWORD = os.getenv("PGPASSWORD", "password")
-PGHOST = os.getenv("PGHOST", "172.17.0.1")
-PGPORT = os.getenv("PGPORT", 5432)
-PGDATABASE = os.getenv("PGDATABASE", "test")
 
 
 # a = wkt.loads("POLYGON ((0 0, 0 -1, 7.5 -1, 7.5 0, 0 0))")
@@ -110,11 +104,6 @@ def main():
         native_name=layer_name,
         feature_type="Polygon",
     )
-
-    from owslib.wms import WebMapService
-
-    wms = WebMapService(GEOSERVER_URL + "/" + worskpace_name + "/wms", version="1.3.0")
-    pprint(wms.contents)
 
     if finalCleanup:
         # brutal cleanup at the end
