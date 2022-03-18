@@ -11,6 +11,7 @@ from api.GeoserverApi import GeoserverAPI
 from pprint import pprint
 import pandas
 from collections import Counter
+import multiprocessing as mp
 
 from random import randint
 
@@ -60,12 +61,14 @@ for workspace_name in geoserverServer.list_workspaces():
         password=GEOSERVER_PASSWORD,
     )
 
+# FIXME: should randomly select from the different workspaces as well
 wms = fullConfig[list(fullConfig.keys())[0]]
 print(type(wms))
 
 EPSG_3857_BBOX = Bbox(Point(-20037508, -20037508), Point(20037508, 20037508))
 
-for i in range(10):
+
+def dirty_parallel_requests():
     try:
         img = wms.getmap(
             layers=[
@@ -74,6 +77,7 @@ for i in range(10):
                 ]
             ],
             srs="EPSG:3857",
+            # FIXME: Bbox should be taken between the EPSG_3857 layer boundaries
             bbox=Bbox(
                 Point(
                     randint(EPSG_3857_BBOX.ll.x, EPSG_3857_BBOX.ur.x),
@@ -85,10 +89,23 @@ for i in range(10):
             format="image/png",
             transparent=True,
         )
-
-        instances.append(img.info()["X-Gs-Cloud-Service-Id"])
+        return img.info()["X-Gs-Cloud-Service-Id"]
     except ServiceException:
-        pass
+        return None
+
+
+# nb_parallel_requests = mp.cpu_count()
+nb_parallel_requests = 8
+nb_total_requests = 1000
+
+pool = mp.Pool(nb_parallel_requests)
+instances = list(
+    filter(
+        None, [pool.apply(dirty_parallel_requests) for i in range(nb_total_requests)]
+    )
+)
+
+pool.close()
 
 instances_count = Counter(instances)
 df = pandas.DataFrame.from_dict(instances_count, orient="index")
