@@ -3,14 +3,21 @@
 from api.GeoserverApi import GeoserverAPI
 
 import os
-
-# FIXME: this is dirty
-# sys.path.append("./generated")
 import os.path
-
-
-import string
 import random
+import string
+
+from pprint import pprint
+
+import pandas as pd
+import shapely
+import shapely.wkt as wkt
+import geopandas as gpd
+
+import sqlalchemy
+from sqlalchemy import Column, Integer, String, Table, MetaData
+from sqlalchemy.engine import create_engine
+from geoalchemy2 import Geometry
 
 
 # A bit of dirty globals
@@ -29,16 +36,6 @@ PGHOST = os.getenv("PGHOST", "172.17.0.1")
 PGPORT = os.getenv("PGPORT", 5432)
 PGDATABASE = os.getenv("PGDATABASE", "test")
 
-
-import pandas as pd
-import shapely
-import shapely.wkt as wkt
-import geopandas as gpd
-
-import sqlalchemy
-from sqlalchemy import Column, Integer, String, Table, MetaData
-from sqlalchemy.engine import create_engine
-from geoalchemy2 import Geometry
 
 # a = wkt.loads("POLYGON ((0 0, 0 -1, 7.5 -1, 7.5 0, 0 0))")
 # b = wkt.loads("POLYGON ((0 1, 1 0, 2 0.5, 3 0, 4 0, 5 0.5, 6 -0.5, 7 -0.5, 7 1, 0 1))")
@@ -84,15 +81,13 @@ class StupidPgLayers:
 def main():
     finalCleanup = False
     # create a new workspace
-    worskpace_name = "".join(
-        random.choices(string.ascii_uppercase + string.digits, k=10)
-    )
+    worskpace_name = randomStr(12, string.ascii_uppercase)
     geoserverServer = GeoserverAPI(
         GEOSERVER_REST_URL, GEOSERVER_USERNAME, GEOSERVER_PASSWORD
     )
     geoserverServer.create_workspace(worskpace_name)
     workspaces = geoserverServer.list_workspaces()
-
+    pprint(workspaces)
     # create one db store
     store_name = randomStr()
     geoserverServer.create_pg_store(
@@ -115,6 +110,11 @@ def main():
         native_name=layer_name,
         feature_type="Polygon",
     )
+
+    from owslib.wms import WebMapService
+
+    wms = WebMapService(GEOSERVER_URL + "/" + worskpace_name + "/wms", version="1.3.0")
+    pprint(wms.contents)
 
     if finalCleanup:
         # brutal cleanup at the end
