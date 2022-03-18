@@ -214,6 +214,7 @@ Class | Method | HTTP request | Description
 *FeaturetypesApi* | [**get_feature_types_by_workspace**](docs/FeaturetypesApi.md#get_feature_types_by_workspace) | **GET** /workspaces/{workspaceName}/featuretypes | 
 *FeaturetypesApi* | [**modify_feature_type**](docs/FeaturetypesApi.md#modify_feature_type) | **PUT** /workspaces/{workspaceName}/featuretypes/{featureTypeName} | 
 *FeaturetypesApi* | [**modify_feature_type_by_store**](docs/FeaturetypesApi.md#modify_feature_type_by_store) | **PUT** /workspaces/{workspaceName}/datastores/{storeName}/featuretypes/{featureTypeName}. | 
+*LayersApi* | [**create_layer**](docs/LayersApi.md#create_layer) | **POST** /layers | Create a new layer.
 *LayersApi* | [**delete_layer**](docs/LayersApi.md#delete_layer) | **DELETE** /layers/{qualifiedLayerName} | Delete layer
 *LayersApi* | [**delete_layer_by_workspace**](docs/LayersApi.md#delete_layer_by_workspace) | **DELETE** /workspaces/{workspaceName}/layers/{layerName}. | Delete layer
 *LayersApi* | [**get_layer**](docs/LayersApi.md#get_layer) | **GET** /layers/{qualifiedLayerName} | Retrieve a layer

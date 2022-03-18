@@ -114,8 +114,14 @@ class GeoserverAPI:
     def get_pg_store(self, workspace_name, store_name):
         pass
 
-    def create_pg_layer(self, workspace_name, store_name, layer_name):
-        pass
+    def create_pg_layer(self, workspace_name, store_name, layer_name, body):
+        api_instance = geoserver.LayersApi(geoserver.ApiClient(self.configuration))
+        body = geoserver.LayerInfoWrapper(name=layer_name, workspace=workspace_name)
+        try:
+            # Modify a layer.
+            api_instance.create_layer(body)
+        except ApiException as e:
+            print("Exception when calling LayersApi->create_layer: %s\n" % e)
 
     def delete_pg_layer(self, workspace_name, store_name, layer_name):
         pass
