@@ -90,7 +90,7 @@ def main():
 
     # create layer in postgis
     engine = create_engine(
-        f"postgres://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
+        f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
     )
     layer_name = randomStr()
     pg_layer = StupidPgLayers(engine, layer_name, "POLYGON")

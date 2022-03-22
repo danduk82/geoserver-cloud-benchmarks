@@ -1,0 +1,3 @@
+[submodule "OWSLib"]
+	path = OWSLib
+	url = git@github.com:danduk82/OWSLib.git
