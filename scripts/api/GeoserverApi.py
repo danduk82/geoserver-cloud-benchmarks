@@ -164,3 +164,6 @@ class GeoserverAPI:
 
     def get_pg_layer(self, workspace_name, store_name, layer_name):
         pass
+
+    def create_gwc_layer(self, workspace_name, layer_name):
+        pass

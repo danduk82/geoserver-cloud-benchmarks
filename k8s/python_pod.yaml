@@ -57,6 +57,11 @@ spec:
     env:
       - name: GEOSERVER_URL
         value: http://geoserver-geoservercloud-gateway:8080/geoserver-cloud
+      - name: AUTHKEY
+        valueFrom:
+          secretKeyRef:
+            name: authkey
+            key: authkey
     resources: {}
   dnsPolicy: ClusterFirst
   restartPolicy: Always

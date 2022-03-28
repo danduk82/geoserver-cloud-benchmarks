@@ -6,6 +6,7 @@ GEOSERVER_URL = os.getenv(
     "GEOSERVER_URL", "http://localhost:8085/geoserver-cloud"
 ).strip("/")
 GEOSERVER_REST_URL = os.getenv("GEOSERVER_REST_URL", GEOSERVER_URL + "/rest").strip("/")
+GEOSERVER_BASE_URL = os.getenv("GEOSERVER_BASE_URL", "/geoserver-cloud")
 GEOSERVER_USERNAME = os.getenv("GEOSERVER_USERNAME", "admin")
 GEOSERVER_PASSWORD = os.getenv("GEOSERVER_PASSWORD", "geoserver")
 
@@ -15,3 +16,6 @@ PGPASSWORD = os.getenv("PGPASSWORD", "password")
 PGHOST = os.getenv("PGHOST", "172.17.0.1")
 PGPORT = os.getenv("PGPORT", 5432)
 PGDATABASE = os.getenv("PGDATABASE", "test")
+
+# Authkey, if needed
+AUTHKEY = os.getenv("AUTHKEY", None)
