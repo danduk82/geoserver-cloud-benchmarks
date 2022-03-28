@@ -5,6 +5,53 @@ from geoserver import (
     DataStoreInfoWrapper,
     ConnectionParameterEntry,
 )
+from . import GEOSERVER_PASSWORD, GEOSERVER_URL, AUTHKEY, GEOSERVER_USERNAME
+
+import requests
+
+
+class GWCLayer:
+    def __init__(self, workspace, layer_name):
+        self.xml_template = f"""<?xml version="1.0" encoding="UTF-8"?>
+<GeoServerLayer>
+    <enabled>true</enabled>
+    <name>{workspace}:{layer_name}</name>
+    <gridSubsets>
+        <gridSubset>
+            <gridSetName>WebMercatorQuad</gridSetName>
+        </gridSubset>
+    </gridSubsets>
+    <mimeFormats>
+        <string>image/png</string>
+        <string>image/jpeg</string>
+    </mimeFormats>
+    <metaWidthHeight>
+        <int>4</int>
+        <int>4</int>
+    </metaWidthHeight>
+    <expireCache>0</expireCache>
+    <expireClients>0</expireClients>
+    <parameterFilters>
+        <styleParameterFilter>
+            <key>STYLES</key>
+            <defaultValue></defaultValue>
+        </styleParameterFilter>
+    </parameterFilters>
+    <gutter>0</gutter>
+    <cacheWarningSkips/>
+</GeoServerLayer>
+        """
+        self.url = GEOSERVER_URL + f"/gwc/rest/layers/{workspace}:{layer_name}"
+        if AUTHKEY:
+            self.url += f"?authkey={AUTHKEY}"
+
+    def create_layer(self):
+        return requests.put(
+            self.url,
+            self.xml_template,
+            auth=(GEOSERVER_USERNAME, GEOSERVER_PASSWORD),
+            headers={"Content-Type": "text/xml"},
+        )
 
 
 class GeoserverAPI:
@@ -166,4 +213,9 @@ class GeoserverAPI:
         pass
 
     def create_gwc_layer(self, workspace_name, layer_name):
-        pass
+        layer = GWCLayer(workspace_name, layer_name)
+        response = layer.create_layer()
+        if response.status_code != 200:
+            print(
+                f"warning: GWC layer {workspace_name}:{layer_name} not created, response status: {response.status_code}"
+            )

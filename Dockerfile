@@ -20,7 +20,6 @@ RUN \
 WORKDIR /workdir
 COPY geoserver/ /workdir/geoserver/
 COPY OWSLib/ /workdir/OWSLib/
-COPY scripts/ /workdir/scripts/
 COPY requirements.txt /workdir/requirements.txt
 
 RUN pip install ./geoserver && \
@@ -28,3 +27,4 @@ RUN pip install ./geoserver && \
     pip install -r requirements.txt && \
     pip cache purge
 
+COPY scripts/ /workdir/scripts/

@@ -79,7 +79,7 @@ def main():
     created_layers = []
     created_pg_layers = []
     # create a new workspace
-    for w_i in range(random.randint(1, 10)):
+    for w_i in range(random.randint(1, 1)):
         workspace_name = randomStr(12, string.ascii_uppercase)
         geoserverServer = GeoserverAPI(
             GEOSERVER_REST_URL, GEOSERVER_USERNAME, GEOSERVER_PASSWORD
@@ -100,7 +100,7 @@ def main():
         engine = create_engine(
             f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
         )
-        for l_i in range(random.randint(1, 10)):
+        for l_i in range(random.randint(1, 1)):
             layer_name = randomStr()
             pg_layer = StupidPgLayers(engine, layer_name, "POLYGON")
             pg_layer.insert(name=randomStr(), geom="POLYGON((0 0,1 0,1 1,0 1,0 0))")
@@ -114,12 +114,16 @@ def main():
                 native_name=layer_name,
                 feature_type="Polygon",
             )
+            geoserverServer.create_gwc_layer(workspace_name, layer_name)
+
             created_layers.append(layer_name)
+            print(f"layer: {workspace_name}:{layer_name}")
 
     if finalCleanup:
         # brutal cleanup at the end
         for workspace in created_workspaces:
             geoserverServer.delete_workspace(workspace)
+
         for pg_layer in created_pg_layers:
             pg_layer.drop()
 
