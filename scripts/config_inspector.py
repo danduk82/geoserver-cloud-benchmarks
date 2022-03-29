@@ -85,17 +85,22 @@ for p in pod_list.items:
 
 # todo
 created_layers = sorted(geoserverInstance.created_layers)
-deleted_workspaces = sorted(geoserverInstance.deleted_workspaces)
-
+# deleted_workspaces = sorted(geoserverInstance.deleted_workspaces)
 
 # np.where(b[:] == "bla")[0]
 
 wmts_layers = GWCLayer().list_all()
 for pod in service_pods:
     if service_pods[pod]["service"] == "wms":
-        pass
+        results[pod] = (
+            sorted(list(service_pods[pod]["ogc_service"].contents.keys()))
+            == created_layers
+        )
     elif service_pods[pod]["service"] == "wfs":
-        pass
+        results[pod] = (
+            sorted(list(service_pods[pod]["ogc_service"].contents.keys()))
+            == created_layers
+        )
     elif service_pods[pod]["service"] == "gwc":
         results[pod] = (
             sorted(list(service_pods[pod]["ogc_service"].contents.keys()))
