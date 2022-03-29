@@ -8,10 +8,11 @@ from geoserver import (
 from . import GEOSERVER_PASSWORD, GEOSERVER_URL, AUTHKEY, GEOSERVER_USERNAME
 
 import requests
+import json
 
 
 class GWCLayer:
-    def __init__(self, workspace, layer_name):
+    def __init__(self, workspace=None, layer_name=None):
         self.xml_template = f"""<?xml version="1.0" encoding="UTF-8"?>
 <GeoServerLayer>
     <enabled>true</enabled>
@@ -41,7 +42,10 @@ class GWCLayer:
     <cacheWarningSkips/>
 </GeoServerLayer>
         """
-        self.url = GEOSERVER_URL + f"/gwc/rest/layers/{workspace}:{layer_name}"
+        if workspace and layer_name:
+            self.url = GEOSERVER_URL + f"/gwc/rest/layers/{workspace}:{layer_name}"
+        else:
+            self.url = GEOSERVER_URL + f"/gwc/rest/layers/"
         if AUTHKEY:
             self.url += f"?authkey={AUTHKEY}"
 
@@ -52,6 +56,17 @@ class GWCLayer:
             auth=(GEOSERVER_USERNAME, GEOSERVER_PASSWORD),
             headers={"Content-Type": "text/xml"},
         )
+
+    def list_all(self):
+        response = requests.get(
+            self.url,
+            auth=(GEOSERVER_USERNAME, GEOSERVER_PASSWORD),
+            headers={"Accept-Content": "application/json"},
+        )
+        if response.status_code == 200:
+            return sorted(json.loads(response.content))
+        else:
+            return None
 
 
 class GeoserverAPI:
@@ -219,3 +234,6 @@ class GeoserverAPI:
             print(
                 f"warning: GWC layer {workspace_name}:{layer_name} not created, response status: {response.status_code}"
             )
+
+    def list_gwc_layers(self):
+        layers = GWCLayer().list_all()

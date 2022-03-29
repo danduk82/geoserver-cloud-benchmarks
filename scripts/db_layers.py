@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from multiprocessing.sharedctypes import Value
 from api.GeoserverApi import GeoserverAPI
 from api import (
     GEOSERVER_URL,
@@ -72,60 +73,99 @@ class StupidPgLayers:
         self._table.drop(self.engine)
 
 
-def main():
-    finalCleanup = False
-    created_workspaces = []
-    created_pgstores = []
-    created_layers = []
-    created_pg_layers = []
-    # create a new workspace
-    for w_i in range(random.randint(1, 1)):
-        workspace_name = randomStr(12, string.ascii_uppercase)
-        geoserverServer = GeoserverAPI(
-            GEOSERVER_REST_URL, GEOSERVER_USERNAME, GEOSERVER_PASSWORD
+class GeoserverBoostrap:
+    def __init__(
+        self,
+        geoserver_rest_url=GEOSERVER_REST_URL,
+        geoserver_username=GEOSERVER_USERNAME,
+        geoserver_password=GEOSERVER_PASSWORD,
+    ):
+        self.finalCleanup = False
+        self.created_workspaces = []
+        self.created_pgstores = []
+        self.created_layers = []
+        self.created_pg_layers = []
+        self.deleted_workspaces = []
+        self.geoserverServer = GeoserverAPI(
+            geoserver_rest_url, geoserver_username, geoserver_password
         )
-        geoserverServer.create_workspace(workspace_name)
-        created_workspaces.append(workspace_name)
-        workspaces = geoserverServer.list_workspaces()
-        pprint(workspaces)
 
-        # create one db store
-        store_name = randomStr()
-        geoserverServer.create_pg_store(
-            workspace_name, store_name, PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD
-        )
-        created_pgstores.append(store_name)
+    def create_stuff(self, max_workspaces=1, max_stores=1, max_layers=1):
+        # create a new workspace
+        for w_i in range(random.randint(1, max_workspaces)):
+            workspace_name = randomStr(12, string.ascii_uppercase)
+            self.geoserverServer.create_workspace(workspace_name)
+            self.created_workspaces.append(workspace_name)
 
-        # create layer in postgis
-        engine = create_engine(
-            f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
-        )
-        for l_i in range(random.randint(1, 1)):
-            layer_name = randomStr()
-            pg_layer = StupidPgLayers(engine, layer_name, "POLYGON")
-            pg_layer.insert(name=randomStr(), geom="POLYGON((0 0,1 0,1 1,0 1,0 0))")
-            created_pg_layers.append(pg_layer)
+            for pg_i in range(random.randint(1, max_stores)):
+                # create db store
+                store_name = randomStr()
+                self.geoserverServer.create_pg_store(
+                    workspace_name,
+                    store_name,
+                    PGHOST,
+                    PGPORT,
+                    PGDATABASE,
+                    PGUSER,
+                    PGPASSWORD,
+                )
+                self.created_pgstores.append(store_name)
 
-            # setup the layer in geoserver
-            geoserverServer.create_pg_layer(
-                workspace_name,
-                store_name,
-                layer_name,
-                native_name=layer_name,
-                feature_type="Polygon",
-            )
-            geoserverServer.create_gwc_layer(workspace_name, layer_name)
+                # create layer in postgis
+                engine = create_engine(
+                    f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
+                )
+                for l_i in range(random.randint(1, max_layers)):
+                    layer_name = randomStr()
+                    pg_layer = StupidPgLayers(engine, layer_name, "POLYGON")
+                    pg_layer.insert(
+                        name=randomStr(), geom="POLYGON((0 0,1 0,1 1,0 1,0 0))"
+                    )
+                    self.created_pg_layers.append(pg_layer)
 
-            created_layers.append(layer_name)
-            print(f"layer: {workspace_name}:{layer_name}")
+                    # setup the layer in geoserver
+                    self.geoserverServer.create_pg_layer(
+                        workspace_name,
+                        store_name,
+                        layer_name,
+                        native_name=layer_name,
+                        feature_type="Polygon",
+                    )
+                    self.geoserverServer.create_gwc_layer(workspace_name, layer_name)
 
-    if finalCleanup:
+                    self.created_layers.append(layer_name)
+                    print(f"layer: {workspace_name}:{layer_name}")
+
+    def delete_some_stuff(self, nb_workspaces=1):
+        for i_w in range(nb_workspaces):
+            to_del = random.randint(0, len(self.created_workspaces))
+            try:
+                self.deleted_workspaces.append(self.created_workspaces[to_del])
+                self.geoserverServer.delete_workspace(self.created_workspaces[to_del])
+                del self.created_workspaces[to_del]
+            except ValueError:
+                self.deleted_workspaces.append(self.created_workspaces[to_del])
+                self.geoserverServer.delete_workspace(self.created_workspaces[to_del])
+                del self.created_workspaces[to_del]
+
+    def tabula_rasa(self):
+        workspaces = self.geoserverServer.list_workspaces()
+        for workspace in workspaces:
+            self.geoserverServer.delete_workspace(workspace)
+
+    def cleanup(self):
         # brutal cleanup at the end
-        for workspace in created_workspaces:
-            geoserverServer.delete_workspace(workspace)
+        for workspace in self.created_workspaces:
+            self.geoserverServer.delete_workspace(workspace)
 
-        for pg_layer in created_pg_layers:
+        for pg_layer in self.created_pg_layers:
             pg_layer.drop()
+
+
+def main():
+    geoserverInstance = GeoserverBoostrap()
+    geoserverInstance.create_stuff(2, 3, 3)
+    geoserverInstance.delete_some_stuff(2)
 
 
 if __name__ == "__main__":

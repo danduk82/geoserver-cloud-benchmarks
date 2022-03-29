@@ -1,7 +1,9 @@
-import kubernetes
+import kubernetes as k8s
 import os
+import numpy as np
 
-from api.GeoserverApi import GeoserverAPI
+from db_layers import GeoserverBoostrap
+from api.GeoserverApi import GeoserverAPI, GWCLayer
 from api import (
     GEOSERVER_URL,
     GEOSERVER_REST_URL,
@@ -20,8 +22,8 @@ from owslib.wms import WebMapService
 from owslib.wfs import WebFeatureService
 from owslib.wmts import WebMapTileService
 
-kubernetes.config.load_incluster_config()
-k_client = kubernetes.client.CoreV1Api()
+k8s.config.load_incluster_config()
+k_client = k8s.client.CoreV1Api()
 
 
 def create_service(pod_ip, service):
@@ -42,11 +44,26 @@ service_pods = {}
 
 pod_list = k_client.list_namespaced_pod(os.getenv("K8S_NAMESPACE", "default"))
 
+
+geoserverInstance = GeoserverBoostrap()
+geoserverInstance.create_stuff(2, 3, 3)
+geoserverInstance.delete_some_stuff(2)
+
 for p in pod_list.items:
     try:
-        if p.metadata.labels["app.kubernetes.io/component"] in ["wms", "wfs"]: # FIXME: gwc not working
+        if p.metadata.labels["app.k8s.io/component"] in [
+            "wms",
+            "wfs",
+            "gwc",
+        ]:
             service_pods[p.status.pod_ip] = create_service(
-                p.status.pod_ip, p.metadata.labels["app.kubernetes.io/component"]
+                p.status.pod_ip, p.metadata.labels["app.k8s.io/component"]
             )
     except KeyError:
+        # there might be pods without "app.k8s.io/component"
+        # we just skip ahead
         pass
+
+    # todo
+    response = GWCLayer().list_all()
+    sorted(list(wmts.contents.keys())) == sorted(response)
