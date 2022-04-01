@@ -29,8 +29,8 @@ from sqlalchemy.engine import create_engine
 from geoalchemy2 import Geometry
 
 
-def randomStr(nb_char=10, str_type=string.ascii_lowercase):
-    return "".join(random.choices(str_type, k=nb_char))
+def randomStr(nb_char=10, str_type=string.ascii_lowercase, prefix=""):
+    return prefix + "".join(random.choices(str_type, k=nb_char))
 
 
 class StupidPgLayers:
@@ -80,16 +80,16 @@ class GeoserverBoostrap:
             geoserver_rest_url, geoserver_username, geoserver_password
         )
 
-    def create_stuff(self, max_workspaces=1, max_stores=1, max_layers=1):
+    def create_stuff(self, max_workspaces=1, max_stores=1, max_layers=1, prefix=""):
         # create a new workspace
         for w_i in range(random.randint(1, max_workspaces)):
-            workspace_name = randomStr(12, string.ascii_uppercase)
+            workspace_name = randomStr(12, string.ascii_uppercase, prefix=prefix)
             self.geoserverServer.create_workspace(workspace_name)
             self.created_workspaces.append(workspace_name)
 
             for pg_i in range(random.randint(1, max_stores)):
                 # create db store
-                store_name = randomStr()
+                store_name = randomStr(prefix=prefix)
                 self.geoserverServer.create_pg_store(
                     workspace_name,
                     store_name,
@@ -106,7 +106,7 @@ class GeoserverBoostrap:
                     f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
                 )
                 for l_i in range(random.randint(1, max_layers)):
-                    layer_name = randomStr()
+                    layer_name = randomStr(prefix=prefix)
                     pg_layer = StupidPgLayers(
                         engine, layer_name, workspace_name, "POLYGON"
                     )

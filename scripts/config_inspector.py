@@ -22,13 +22,15 @@ from api import (
 from owslib.wms import WebMapService
 from owslib.wfs import WebFeatureService
 from owslib.wmts import WebMapTileService
+from owslib.util import ServiceException
 
 k8s.config.load_incluster_config()
 k_client = k8s.client.CoreV1Api()
 
 
 def create_service(pod_ip, service):
-    baseUrl = f"http://{pod_ip}:8080{GEOSERVER_BASE_URL}"
+    # baseUrl = f"http://{pod_ip}:8080{GEOSERVER_BASE_URL}"
+    baseUrl = f"http://{pod_ip}:8080"
     if service == "wms":
         return {
             "service": "wms",
@@ -54,31 +56,34 @@ def create_service(pod_ip, service):
         return None
 
 
+prefix = "deleteme"
+
 service_pods = {}
 
 pod_list = k_client.list_namespaced_pod(os.getenv("K8S_NAMESPACE", "default"))
 
 
 geoserverInstance = GeoserverBoostrap()
-geoserverInstance.create_stuff(2, 3, 3)
+geoserverInstance.create_stuff(2, 3, 3, prefix=prefix)
 # geoserverInstance.delete_some_stuff(2)
 
 
 results = {}
 for p in pod_list.items:
     try:
-        if p.metadata.labels["app.k8s.io/component"] in [
+        service_type = p.metadata.labels["app.kubernetes.io/component"]
+        if service_type in [
             "wms",
             "wfs",
             "gwc",
         ]:
             service_pods[p.status.pod_ip] = create_service(
-                p.status.pod_ip, p.metadata.labels["app.k8s.io/component"]
+                p.status.pod_ip, service_type
             )
-            results[p.status.pod_ip : False]
+            results[f"{service_type}:{p.status.pod_ip}"] = False
 
     except KeyError:
-        # there might be pods without "app.k8s.io/component"
+        # there might be pods without "app.kubernetes.io/component"
         # we just skip ahead
         pass
 
@@ -87,24 +92,33 @@ for p in pod_list.items:
 created_layers = sorted(geoserverInstance.created_layers)
 # deleted_workspaces = sorted(geoserverInstance.deleted_workspaces)
 
-# np.where(b[:] == "bla")[0]
-
-wmts_layers = GWCLayer().list_all()
+try:
+    wmts_layers = GWCLayer().list_all()
+except ServiceException:
+    wmts_layers = False
 for pod in service_pods:
-    if service_pods[pod]["service"] == "wms":
-        results[pod] = (
-            sorted(list(service_pods[pod]["ogc_service"].contents.keys()))
-            == created_layers
+    service_type = service_pods[pod]["service"]
+    if service_type == "wms" or service_type == "wfs":
+        results[f"{service_type}:{pod}"] = all(
+            layer in list(service_pods[pod]["ogc_service"].contents.keys())
+            for layer in [f"{n}:{l}" for n, l in created_layers]
         )
-    elif service_pods[pod]["service"] == "wfs":
-        results[pod] = (
-            sorted(list(service_pods[pod]["ogc_service"].contents.keys()))
-            == created_layers
-        )
-    elif service_pods[pod]["service"] == "gwc":
-        results[pod] = (
-            sorted(list(service_pods[pod]["ogc_service"].contents.keys()))
-            == wmts_layers
-        )
+    elif service_type == "gwc":
+        if not wmts_layers:
+            results[f"{service_type}:{pod}"] = False
+        else:
+            results[f"{service_type}:{pod}"] = all(
+                layer in wmts_layers
+                for layer in [f"{n}:{l}" for n, l in created_layers]
+            )
+
 
 print(results)
+
+# cleanup in the end
+for w in geoserverInstance.geoserverServer.list_workspaces():
+    if w.startswith(prefix):
+        geoserverInstance.geoserverServer.delete_workspace(w)
+for l in wmts_layers:
+    if l.startswith(prefix):
+        GWCLayer.delete_layer(l)

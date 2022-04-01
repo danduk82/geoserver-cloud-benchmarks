@@ -57,6 +57,13 @@ class GWCLayer:
             headers={"Content-Type": "text/xml"},
         )
 
+    @staticmethod
+    def delete_layer(layer_name):
+        return requests.delete(
+            GEOSERVER_URL + f"/gwc/rest/layers/{layer_name}",
+            auth=(GEOSERVER_USERNAME, GEOSERVER_PASSWORD),
+        )
+
     def list_all(self):
         response = requests.get(
             self.url,
