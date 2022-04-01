@@ -13,7 +13,7 @@ RUN \
     apt-get update && \
     apt-get --assume-yes upgrade && \
     apt-get install --assume-yes --no-install-recommends apt-utils && \
-    apt-get install --assume-yes --no-install-recommends apt-transport-https gettext less gnupg libpq5 postgresql-client vim && \
+    apt-get install --assume-yes --no-install-recommends apt-transport-https gettext less gnupg libpq5 postgresql-client vim jq && \
     apt-get clean && \
     rm --recursive --force /var/lib/apt/lists/*
 

@@ -80,14 +80,14 @@ class GeoserverBoostrap:
             geoserver_rest_url, geoserver_username, geoserver_password
         )
 
-    def create_stuff(self, max_workspaces=1, max_stores=1, max_layers=1, prefix=""):
+    def create_stuff(self, nb_workspaces=1, nb_stores=1, nb_layers=1, prefix=""):
         # create a new workspace
-        for w_i in range(random.randint(1, max_workspaces)):
+        for w_i in range(nb_workspaces):
             workspace_name = randomStr(12, string.ascii_uppercase, prefix=prefix)
             self.geoserverServer.create_workspace(workspace_name)
             self.created_workspaces.append(workspace_name)
 
-            for pg_i in range(random.randint(1, max_stores)):
+            for pg_i in range(nb_stores):
                 # create db store
                 store_name = randomStr(prefix=prefix)
                 self.geoserverServer.create_pg_store(
@@ -105,7 +105,7 @@ class GeoserverBoostrap:
                 engine = create_engine(
                     f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
                 )
-                for l_i in range(random.randint(1, max_layers)):
+                for l_i in range(nb_layers):
                     layer_name = randomStr(prefix=prefix)
                     pg_layer = StupidPgLayers(
                         engine, layer_name, workspace_name, "POLYGON"
@@ -129,6 +129,7 @@ class GeoserverBoostrap:
                     print(f"layer: {workspace_name}:{layer_name}")
 
     def delete_some_stuff(self, nb_workspaces=1):
+        # FIXME: not working because of random id for the moment and GWC not deleting the layers
         for i_w in range(nb_workspaces):
             to_del = random.randint(0, len(self.created_workspaces))
             try:
