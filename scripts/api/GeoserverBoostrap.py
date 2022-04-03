@@ -129,7 +129,7 @@ class GeoserverBoostrap:
                     )
                     self.geoserverServer.create_gwc_layer(workspace_name, layer_name)
 
-                    self.created_layers.append((workspace_name, layer_name))
+                    self.created_layers.append(f"{workspace_name}:{layer_name}")
                     print(f"layer: {workspace_name}:{layer_name}")
 
     def delete_some_stuff(self, nb_workspaces=1):
