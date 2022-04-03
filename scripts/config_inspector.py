@@ -32,32 +32,46 @@ k8s.config.load_incluster_config()
 k_client = k8s.client.CoreV1Api()
 
 
-def create_service(pod_ip, service):
-    # baseUrl = f"http://{pod_ip}:8080{GEOSERVER_BASE_URL}"
-    baseUrl = f"http://{pod_ip}:8080"
-    if service == "wms":
-        return {
-            "service": "wms",
-            "ogc_service": WebMapService(
-                baseUrl + "/wms", version="1.3.0", authkey=AUTHKEY
-            ),
-        }
-    elif service == "wfs":
-        return {
-            "service": "wfs",
-            "ogc_service": WebFeatureService(
-                baseUrl + "/wfs", version="1.1.0", authkey=AUTHKEY
-            ),
-        }
-    elif service == "gwc":
-        return {
-            "service": "gwc",
-            "ogc_service": WebMapTileService(
-                baseUrl + "/gwc/service/wmts?REQUEST=GetCapabilities", authkey=AUTHKEY
-            ),
-        }
-    else:
-        return None
+def create_service(pod, results_dict, suffix):
+    try:
+        service_type = pod.metadata.labels["app.kubernetes.io/component"]
+        if service_type in [
+            "wms",
+            "wfs",
+            "gwc",
+        ]:
+            results_dict[f"{service_type}:{pod.status.pod_ip}:{suffix}"] = False
+            baseUrl = f"http://{pod.status.pod_ip}:8080"
+            if service_type == "wms":
+                return {
+                    "service": "wms",
+                    "ogc_service": WebMapService(
+                        baseUrl + "/wms", version="1.3.0", authkey=AUTHKEY
+                    ),
+                }
+            elif service_type == "wfs":
+                return {
+                    "service": "wfs",
+                    "ogc_service": WebFeatureService(
+                        baseUrl + "/wfs", version="1.1.0", authkey=AUTHKEY
+                    ),
+                }
+            elif service_type == "gwc":
+                return {
+                    "service": "gwc",
+                    "ogc_service": WebMapTileService(
+                        baseUrl + "/gwc/service/wmts?REQUEST=GetCapabilities",
+                        authkey=AUTHKEY,
+                    ),
+                }
+            else:
+                return None
+
+    except KeyError:
+        # there might be pods without "app.kubernetes.io/component"
+        # we just skip ahead
+        pass
+    return None
 
 
 def createParser():
@@ -169,6 +183,9 @@ def main():
     nb_processes = (
         options.nb_workspaces if options.nb_processes == 0 else options.nb_processes
     )
+
+    # FIXME: https://stackoverflow.com/questions/38393269/fill-up-a-dictionary-in-parallel-with-multiprocessing
+    manager = mp.Manager()
     service_pods = {}
 
     pod_list = k_client.list_namespaced_pod(os.getenv("K8S_NAMESPACE", "default"))
@@ -189,32 +206,28 @@ def main():
             output_results = json.load(output_file)
     except (FileNotFoundError, JSONDecodeError):
         output_results = []
-    results = {}
+    results = manager.dict()
 
-    for p in pod_list.items:
-        try:
-            service_type = p.metadata.labels["app.kubernetes.io/component"]
-            if service_type in [
-                "wms",
-                "wfs",
-                "gwc",
-            ]:
-                service_pods[p.status.pod_ip] = create_service(
-                    p.status.pod_ip, service_type
-                )
-                results[f"{service_type}:{p.status.pod_ip}:creation"] = False
-                results[f"{service_type}:{p.status.pod_ip}:deletion"] = False
-
-        except KeyError:
-            # there might be pods without "app.kubernetes.io/component"
-            # we just skip ahead
-            pass
+    pool = mp.Pool(len(pod_list.items))
+    service_pods_list = list(
+        filter(
+            None,
+            [
+                pool.apply(create_service, args=(pod, results, "creation"))
+                for pod in pod_list.items
+            ],
+        )
+    )
+    pool.close()
+    for k, v in service_pods_list:
+        service_pods[k] = v
 
     # todo
     created_layers = sorted(geoserverInstance.created_layers)
     # deleted_workspaces = sorted(geoserverInstance.deleted_workspaces)
 
     # validate creation
+    print("validating creation")
     try:
         wmts_layers = GWCLayer().list_all()
     except ServiceException:
@@ -242,6 +255,21 @@ def main():
             GWCLayer.delete_layer(l)
 
     # validate deletion
+    print("validating deletion")
+    pool = mp.Pool(len(pod_list.items))
+    service_pods_list = list(
+        filter(
+            None,
+            [
+                pool.apply(create_service, args=(pod, results, "deletion"))
+                for pod in pod_list.items
+            ],
+        )
+    )
+    pool.close()
+    for k, v in service_pods_list:
+        service_pods[k] = v
+
     try:
         wmts_layers = GWCLayer().list_all()
     except ServiceException:
@@ -266,7 +294,9 @@ def main():
         "nb_stores": options.nb_stores,
         "nb_layers": options.nb_layers,
     }
-    output_results.append(results)
+    output_results.append(
+        dict(results)
+    )  # cast mp.Manager.dict to normal dict for serialization
 
     with open(options.output_file, "w") as output_file:
         json.dump(output_results, output_file)
