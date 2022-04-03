@@ -265,7 +265,6 @@ def main():
         "nb_workspaces": options.nb_workspaces,
         "nb_stores": options.nb_stores,
         "nb_layers": options.nb_layers,
-        "nb_processes": nb_processes,
     }
     output_results.append(results)
 
