@@ -80,7 +80,9 @@ class GeoserverBoostrap:
             geoserver_rest_url, geoserver_username, geoserver_password
         )
 
-    def create_stuff(self, nb_workspaces=1, nb_stores=1, nb_layers=1, prefix=""):
+    def create_stuff(
+        self, nb_workspaces=1, nb_stores=1, nb_layers=1, prefix="", nb_processes=1
+    ):
         # create a new workspace
         for w_i in range(nb_workspaces):
             workspace_name = randomStr(12, string.ascii_uppercase, prefix=prefix)

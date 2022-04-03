@@ -3,6 +3,7 @@ import argparse as ap
 import kubernetes as k8s
 import json
 from json.decoder import JSONDecodeError
+import multiprocessing as mp
 import os
 import numpy as np
 
@@ -122,6 +123,15 @@ Example:
         help="prefix to use for the tmp workspaces and layer names",
     )
     optionGroup.add_argument(
+        "-c",
+        "--nb-processes",
+        dest="nb_processes",
+        action="store",
+        type=int,
+        default=1,
+        help="number of total processes to use, if absent 'nb_workspaces' will be used",
+    )
+    optionGroup.add_argument(
         "-w",
         "--nb-workspaces",
         dest="nb_workspaces",
@@ -156,6 +166,9 @@ def main():
     options = parser.parse_args()
     options.prefix
 
+    nb_processes = (
+        options.nb_workspaces if options.nb_processes == 0 else options.nb_processes
+    )
     service_pods = {}
 
     pod_list = k_client.list_namespaced_pod(os.getenv("K8S_NAMESPACE", "default"))
@@ -166,10 +179,18 @@ def main():
         options.nb_stores,
         options.nb_layers,
         prefix=options.prefix,
+        nb_processes=nb_processes,
     )
     # geoserverInstance.delete_some_stuff(2) # FIXME: not working
 
+    # load results from older tests
+    try:
+        with open(options.output_file) as output_file:
+            output_results = json.load(output_file)
+    except (FileNotFoundError, JSONDecodeError):
+        output_results = []
     results = {}
+
     for p in pod_list.items:
         try:
             service_type = p.metadata.labels["app.kubernetes.io/component"]
@@ -181,7 +202,8 @@ def main():
                 service_pods[p.status.pod_ip] = create_service(
                     p.status.pod_ip, service_type
                 )
-                results[f"{service_type}:{p.status.pod_ip}"] = False
+                results[f"{service_type}:{p.status.pod_ip}:creation"] = False
+                results[f"{service_type}:{p.status.pod_ip}:deletion"] = False
 
         except KeyError:
             # there might be pods without "app.kubernetes.io/component"
@@ -192,6 +214,7 @@ def main():
     created_layers = sorted(geoserverInstance.created_layers)
     # deleted_workspaces = sorted(geoserverInstance.deleted_workspaces)
 
+    # validate creation
     try:
         wmts_layers = GWCLayer().list_all()
     except ServiceException:
@@ -199,35 +222,55 @@ def main():
     for pod in service_pods:
         service_type = service_pods[pod]["service"]
         if service_type == "wms" or service_type == "wfs":
-            results[f"{service_type}:{pod}"] = all(
+            results[f"{service_type}:{pod}:creation"] = all(
                 layer in list(service_pods[pod]["ogc_service"].contents.keys())
                 for layer in [f"{n}:{l}" for n, l in created_layers]
             )
         elif service_type == "gwc":
             if not wmts_layers:
-                results[f"{service_type}:{pod}"] = False
+                results[f"{service_type}:{pod}:creation"] = False
             else:
-                results[f"{service_type}:{pod}"] = all(
+                results[f"{service_type}:{pod}:creation"] = all(
                     layer in wmts_layers
                     for layer in [f"{n}:{l}" for n, l in created_layers]
                 )
 
-    try:
-        with open(options.output_file) as output_file:
-            output_results = json.load(output_file)
-    except (FileNotFoundError, JSONDecodeError):
-        output_results = []
-
-    output_results.append(results)
-
-    with open(options.output_file, "w") as output_file:
-        json.dump(output_results, output_file)
-
-    # cleanup in the end
+    # delete everything
     geoserverInstance.cleanup()
     for l in wmts_layers:
         if l.startswith(options.prefix):
             GWCLayer.delete_layer(l)
+
+    # validate deletion
+    try:
+        wmts_layers = GWCLayer().list_all()
+    except ServiceException:
+        wmts_layers = False
+    for pod in service_pods:
+        service_type = service_pods[pod]["service"]
+        if service_type == "wms" or service_type == "wfs":
+            results[f"{service_type}:{pod}:deletion"] = not any(
+                layer in list(service_pods[pod]["ogc_service"].contents.keys())
+                for layer in [f"{n}:{l}" for n, l in created_layers]
+            )
+        elif service_type == "gwc":
+            if not wmts_layers:
+                results[f"{service_type}:{pod}:deletion"] = False
+            else:
+                results[f"{service_type}:{pod}:deletion"] = not any(
+                    layer in wmts_layers
+                    for layer in [f"{n}:{l}" for n, l in created_layers]
+                )
+    results["parameters"] = {
+        "nb_workspaces": options.nb_workspaces,
+        "nb_stores": options.nb_stores,
+        "nb_layers": options.nb_layers,
+        "nb_processes": nb_processes,
+    }
+    output_results.append(results)
+
+    with open(options.output_file, "w") as output_file:
+        json.dump(output_results, output_file)
 
 
 if __name__ == "__main__":
