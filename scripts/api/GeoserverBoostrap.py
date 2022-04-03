@@ -15,6 +15,7 @@ import os
 import os.path
 import random
 import string
+import multiprocessing as mp
 
 from pprint import pprint
 
@@ -83,6 +84,7 @@ class GeoserverBoostrap:
     def create_stuff(
         self, nb_workspaces=1, nb_stores=1, nb_layers=1, prefix="", nb_processes=1
     ):
+
         # create a new workspace
         for w_i in range(nb_workspaces):
             workspace_name = randomStr(12, string.ascii_uppercase, prefix=prefix)
