@@ -35,28 +35,32 @@ k_client = k8s.client.CoreV1Api()
 def create_service(pod_ip, service):
     # baseUrl = f"http://{pod_ip}:8080{GEOSERVER_BASE_URL}"
     baseUrl = f"http://{pod_ip}:8080"
-    if service == "wms":
-        return {
-            "service": "wms",
-            "ogc_service": WebMapService(
-                baseUrl + "/wms", version="1.3.0", authkey=AUTHKEY
-            ),
-        }
-    elif service == "wfs":
-        return {
-            "service": "wfs",
-            "ogc_service": WebFeatureService(
-                baseUrl + "/wfs", version="1.1.0", authkey=AUTHKEY
-            ),
-        }
-    elif service == "gwc":
-        return {
-            "service": "gwc",
-            "ogc_service": WebMapTileService(
-                baseUrl + "/gwc/service/wmts?REQUEST=GetCapabilities", authkey=AUTHKEY
-            ),
-        }
-    else:
+    try:
+        if service == "wms":
+            return {
+                "service": "wms",
+                "ogc_service": WebMapService(
+                    baseUrl + "/wms", version="1.3.0", authkey=AUTHKEY
+                ),
+            }
+        elif service == "wfs":
+            return {
+                "service": "wfs",
+                "ogc_service": WebFeatureService(
+                    baseUrl + "/wfs", version="1.1.0", authkey=AUTHKEY
+                ),
+            }
+        elif service == "gwc":
+            return {
+                "service": "gwc",
+                "ogc_service": WebMapTileService(
+                    baseUrl + "/gwc/service/wmts?REQUEST=GetCapabilities",
+                    authkey=AUTHKEY,
+                ),
+            }
+        else:
+            return None
+    except ServiceException:
         return None
 
 
@@ -193,16 +197,17 @@ def main():
 
     for p in pod_list.items:
         try:
-            service_type = p.metadata.labels["app.kubernetes.io/component"]
-            if service_type in [
-                "wms",
-                "wfs",
-                "gwc",
-            ]:
-                service_pods[p.status.pod_ip] = create_service(
-                    p.status.pod_ip, service_type
-                )
-                results[f"{service_type}:{p.status.pod_ip}:creation"] = False
+            if p.metadata.labels:
+                service_type = p.metadata.labels["app.kubernetes.io/component"]
+                if service_type in [
+                    "wms",
+                    "wfs",
+                    "gwc",
+                ]:
+                    service_pods[p.status.pod_ip] = create_service(
+                        p.status.pod_ip, service_type
+                    )
+                    results[f"{service_type}:{p.status.pod_ip}:creation"] = False
 
         except KeyError:
             # there might be pods without "app.kubernetes.io/component"
@@ -219,13 +224,11 @@ def main():
     except ServiceException:
         wmts_layers = False
     for pod in service_pods:
-        service_type = service_pods[pod]["service"]
+        try:
+            service_type = service_pods[pod]["service"]
+        except ValueError:
+            service_type = None  # if ServiceException during get capabilities, NOK
         if service_type == "wms" or service_type == "wfs":
-            print(f"created_layers: {created_layers}")
-
-            ssss_layers = list(service_pods[pod]["ogc_service"].contents.keys())
-            print(f"created_layers: {created_layers}")
-            print(f"all layers: {ssss_layers}")
             results[f"{service_type}:{pod}:creation"] = all(
                 layer in list(service_pods[pod]["ogc_service"].contents.keys())
                 for layer in [l for l in created_layers]
@@ -250,16 +253,17 @@ def main():
 
     for p in pod_list.items:
         try:
-            service_type = p.metadata.labels["app.kubernetes.io/component"]
-            if service_type in [
-                "wms",
-                "wfs",
-                "gwc",
-            ]:
-                service_pods[p.status.pod_ip] = create_service(
-                    p.status.pod_ip, service_type
-                )
-                results[f"{service_type}:{p.status.pod_ip}:deletion"] = False
+            if p.metadata.labels:
+                service_type = p.metadata.labels["app.kubernetes.io/component"]
+                if service_type in [
+                    "wms",
+                    "wfs",
+                    "gwc",
+                ]:
+                    service_pods[p.status.pod_ip] = create_service(
+                        p.status.pod_ip, service_type
+                    )
+                    results[f"{service_type}:{p.status.pod_ip}:deletion"] = False
 
         except KeyError:
             # there might be pods without "app.kubernetes.io/component"
@@ -272,11 +276,11 @@ def main():
     except ServiceException:
         wmts_layers = False
     for pod in service_pods:
-        service_type = service_pods[pod]["service"]
+        try:
+            service_type = service_pods[pod]["service"]
+        except ValueError:
+            service_type = None  # if ServiceException during get capabilities, NOK
         if service_type == "wms" or service_type == "wfs":
-            ssss_layers = list(service_pods[pod]["ogc_service"].contents.keys())
-            print(f"created_layers: {created_layers}")
-            print(f"all layers: {ssss_layers}")
             results[f"{service_type}:{pod}:deletion"] = not any(
                 layer in list(service_pods[pod]["ogc_service"].contents.keys())
                 for layer in [l for l in created_layers]

@@ -28,6 +28,7 @@ import sqlalchemy
 from sqlalchemy import Column, Integer, String, Table, MetaData
 from sqlalchemy.engine import create_engine
 from geoalchemy2 import Geometry
+from urllib.parse import quote_plus as urlquote
 
 
 def randomStr(nb_char=10, str_type=string.ascii_lowercase, prefix=""):
@@ -107,7 +108,8 @@ class GeoserverBoostrap:
 
                 # create layer in postgis
                 engine = create_engine(
-                    f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
+                    f"postgresql://{PGUSER}:%s@{PGHOST}:{PGPORT}/{PGDATABASE}"
+                    % urlquote(PGPASSWORD)
                 )
                 for l_i in range(nb_layers):
                     layer_name = randomStr(prefix=prefix)
@@ -115,7 +117,8 @@ class GeoserverBoostrap:
                         engine, layer_name, workspace_name, "POLYGON"
                     )
                     pg_layer.insert(
-                        name=randomStr(), geom="POLYGON((0 0,1 0,1 1,0 1,0 0))"
+                        name=randomStr(),
+                        geom="SRID=3857;POLYGON((0 0,1 0,1 1,0 1,0 0))",
                     )
                     self.created_pg_layers.append(pg_layer)
 
