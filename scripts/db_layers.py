@@ -10,11 +10,21 @@ from api.GeoserverBoostrap import GeoserverBoostrap
 #     database=PGDATABASE, user=PGUSER, password=PGPASSWORD, host=PGHOST
 # )
 
+workspace_name = "bbbbKAPKAXISCWFF"
+store_name = "bbbbvmjhvhayjv"
+native_name = "bbbbbzxqgcerbp"
+
+import sys
+
 
 def main():
+    layer_name = f"xxx_{sys.argv[1]}"
+    print(layer_name)
     geoserverInstance = GeoserverBoostrap()
-    geoserverInstance.create_stuff(2, 3, 3)
-    geoserverInstance.delete_some_stuff(2)
+    # geoserverInstance.create_stuff(prefix="xxx")
+    geoserverInstance.create_one_layer(
+        workspace_name, store_name, layer_name, native_name
+    )
 
 
 if __name__ == "__main__":

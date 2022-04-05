@@ -82,6 +82,15 @@ class GeoserverBoostrap:
             geoserver_rest_url, geoserver_username, geoserver_password
         )
 
+    def create_one_layer(self, workspace_name, store_name, layer_name, native_name):
+        self.geoserverServer.create_pg_layer(
+            workspace_name,
+            store_name,
+            layer_name,
+            native_name=native_name,
+            feature_type="Polygon",
+        )
+
     def create_stuff(
         self, nb_workspaces=1, nb_stores=1, nb_layers=1, prefix="", nb_processes=1
     ):
