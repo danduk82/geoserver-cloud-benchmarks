@@ -1,4 +1,26 @@
 #!/usr/bin/env python
+
+"""
+set the following variables in your shell before starting the 
+export GEOSERVER_URL=https://geoserver-ogs-trn.swissre.com/ogs-cloud/
+export AUTHKEY=<your_key>
+"""
+
+
+# INPUT SECTION
+layers = [
+    "GEOPORTAL_SHARED:ZIPS",
+    "GEOPORTAL_SHARED:OFZ_ALL",
+    "GEOPORTAL:cu_classic_fl_river",
+    "GEOPORTAL:SRGFZ",
+    "GEOPORTAL_SHARED:SRPFZ",
+]
+
+total_nb_requests = 20000
+
+# END INPUT SECTION
+
+
 import mercantile
 from random import randint, sample
 import requests
@@ -53,16 +75,6 @@ def generateRandomBboxesInExtent(extent, min_zl, max_zl, nb_tiles):
     ]
 
 
-layers = [
-    "GEOPORTAL_SHARED:ZIPS",
-    "GEOPORTAL_SHARED:OFZ_ALL",
-    "GEOPORTAL:cu_classic_fl_river",
-    "GEOPORTAL:SRGFZ",
-    "GEOPORTAL_SHARED:SRPFZ",
-]
-
-total_nb_requests = 20000
-
 layerInfo = {}
 for layer in layers:
     layerInfo[layer] = {}
@@ -96,6 +108,10 @@ for layer in layers:
     layerInfo[layer]["tileWmsBboxes"] += generateRandomBboxesInExtent(
         layerInfo[layer]["bboxWGS84"], 10, 15, total_nb_requests - nb_cached
     )
+    # shuffle everything to add a bit smoothness in the order of requests between
+    # cached and non-cached
+    np.random.shuffle(layerInfo[layer]["tileWmsBboxes"])
+    # save everything
     with open(f"/tmp/{layer}.csv", "w") as f_out:
         f_out.writelines(
             [
